@@ -26,7 +26,7 @@ int main(int args, char **argv) {
     }
 
     sort_grades_in_file(merged_file, &students_num, &grades_sum);
-//    report_data_summary(students_num, grades_sum/ students_num);
+    report_data_summary(students_num, grades_sum/ students_num);
     return EXIT_SUCCESS;
 }
 
@@ -41,13 +41,13 @@ void sort_grades_in_file(FILE *file, int *students_num, int *grades_sum) {
     while (line_size >= 0)
     {
         i = 0;
-//        (*students_num)++;
+        (*students_num)++;
         token = strtok(line_buf, " ");
         fprintf(tmp_file, "%s ", token);
         token = strtok(NULL, " ");
         while (token != NULL && strcmp(token, "\n") != 0) {
             arr[i++] = atoi(token);
-//            *grades_sum = *grades_sum + atoi(token);
+            *grades_sum = *grades_sum + atoi(token);
             token = strtok (NULL, " ");
         }
         qsort(arr, i, 4,cmpfunc);
