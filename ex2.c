@@ -27,9 +27,17 @@ int main(int args, char **argv) {
     }
 
     for (int i = 1; i < args; ++i) {
-        read_file_and_update_merged_file(argv[i], merged_file);
+        int pid = fork();
+        if (pid < 0) {
+            perror("Cannot fork()") ;
+            exit(EXIT_FAILURE) ;
+        }
+        if (pid == 0) { // child process
+            return read_file_and_update_merged_file(argv[i], merged_file);
+        }
+        else
+            wait(NULL);
     }
-
     sort_grades_in_file(merged_file, &students_num, &grades_sum);
     report_data_summary(students_num, grades_sum/ students_num);
     return EXIT_SUCCESS;
@@ -123,12 +131,6 @@ void insert_grades_in_position(char *student_line, long position, FILE *merged_f
     fflush(merged_file);
 }
 
-void report_input_file(const char* file_name, int num_stud)
-{
-    fprintf(stderr, "process: %d file: %s number of students: %d\n",
-            getpid(), file_name, num_stud);
-}
-
 void sort_grades_in_file(FILE *file, int *students_num, int *grades_sum) {
     FILE *tmp_file = fopen("tmp_file.txt", "w");
     fseek(file, 0, SEEK_SET);
@@ -147,6 +149,7 @@ void sort_grades_in_file(FILE *file, int *students_num, int *grades_sum) {
         fprintf(tmp_file, "%s ", token);
         token = strtok(NULL, " ");
         while (token != NULL && strcmp(token, "\n") != 0) {
+            if (token[strlen(token)-1] == '\n' ) token[strlen(token)-1]='\0';
             arr[i++] = atoi(token);
             *grades_sum = *grades_sum + atoi(token);
             token = strtok (NULL, " ");
@@ -171,6 +174,12 @@ void sort_grades_in_file(FILE *file, int *students_num, int *grades_sum) {
         fputc(ch, merged_file);
     fclose(tmp_file);
     fclose(merged_file);
+}
+
+void report_input_file(const char* file_name, int num_stud)
+{
+    fprintf(stderr, "process: %d file: %s number of students: %d\n",
+            getpid(), file_name, num_stud);
 }
 
 void report_data_summary(int num_stud, double avg)
