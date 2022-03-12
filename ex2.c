@@ -6,12 +6,11 @@
 int read_file_and_update_merged_file(char *file_name, FILE *merged_file);
 void report_input_file(const char* file_name, int num_stud);
 void report_data_summary(int num_stud, double avg);
-void update_grades_in_merged_file(char *student_line, FILE *merged_file);
+void update_student_in_merged_file(char *student_line, FILE *merged_file);
 void insert_grades_in_position(char *student_line, long position, FILE *merged_file);
 void sort_grades_in_file(FILE *file, int *students_num, int *grades_sum);
 
 char merged_file_name[] = "merged.txt";
-long size;
 long position;
 
 int cmpfunc (const void * a, const void * b) {
@@ -21,6 +20,12 @@ int cmpfunc (const void * a, const void * b) {
 int main(int args, char **argv) {
     int students_num = 0, grades_sum = 0;
     FILE *merged_file = fopen(merged_file_name, "r+");
+    if (!merged_file)
+    {
+        fprintf(stderr, "Error opening file '%s'\n", merged_file_name);
+        return EXIT_FAILURE;
+    }
+
     for (int i = 1; i < args; ++i) {
         read_file_and_update_merged_file(argv[i], merged_file);
     }
@@ -29,48 +34,6 @@ int main(int args, char **argv) {
     report_data_summary(students_num, grades_sum/ students_num);
     return EXIT_SUCCESS;
 }
-
-void sort_grades_in_file(FILE *file, int *students_num, int *grades_sum) {
-    FILE *tmp_file = fopen("tmp_file.txt", "w");
-    fseek(file, 0, SEEK_SET);
-    char *token, *line_buf = NULL;
-    size_t line_buf_size = 0;
-    ssize_t line_size;
-    int arr[10], i;
-    line_size = getline(&line_buf, &line_buf_size, file);
-    while (line_size >= 0)
-    {
-        i = 0;
-        (*students_num)++;
-        token = strtok(line_buf, " ");
-        fprintf(tmp_file, "%s ", token);
-        token = strtok(NULL, " ");
-        while (token != NULL && strcmp(token, "\n") != 0) {
-            arr[i++] = atoi(token);
-            *grades_sum = *grades_sum + atoi(token);
-            token = strtok (NULL, " ");
-        }
-        qsort(arr, i, 4,cmpfunc);
-        for (int j = 0; j < i; ++j) {
-            fprintf(tmp_file, "%d ", arr[j]);
-        }
-        fprintf(tmp_file, "\n");
-        line_size = getline(&line_buf, &line_buf_size, file);
-    }
-    free(line_buf);
-    line_buf = NULL;
-    fclose(file);
-    fclose(tmp_file);
-
-    char ch;
-    tmp_file = fopen("tmp_file.txt", "r");
-    FILE *merged_file = fopen(merged_file_name, "w");
-    while((ch = fgetc(tmp_file) ) != EOF )
-        fputc(ch, merged_file);
-    fclose(tmp_file);
-    fclose(merged_file);
-}
-
 
 int read_file_and_update_merged_file(char *file_name, FILE *merged_file) {
     char *line_buf = NULL;
@@ -88,7 +51,7 @@ int read_file_and_update_merged_file(char *file_name, FILE *merged_file) {
     while (line_size >= 0 && strcmp(line_buf, "\n") != 0)
     {
         line_count++;
-        update_grades_in_merged_file(line_buf, merged_file);
+        update_student_in_merged_file(line_buf, merged_file);
         line_size = getline(&line_buf, &line_buf_size, fp);
     }
     report_input_file(file_name, line_count);
@@ -98,23 +61,19 @@ int read_file_and_update_merged_file(char *file_name, FILE *merged_file) {
     return EXIT_SUCCESS;
 }
 
-void update_grades_in_merged_file(char *student_line, FILE *merged_file) {
+void update_student_in_merged_file(char *student_line, FILE *merged_file) {
     if (student_line[strlen(student_line)-1] == '\n' ) student_line[strlen(student_line)-1]='\0';
-//    size=ftell(merged_file); printf ("update_grades_in_merged_file Size of myfile.txt: %ld bytes.\n",size);
     int student_found = 0;
     char *merged_file_token;
-    /* getting student name from input file */
     char line_copy[80];
     strcpy(line_copy, student_line);
+    /* getting student name from input file */
     char *input_file_token = strtok(line_copy, " ");
 
     char *line_buf = NULL;
     size_t line_buf_size = 0;
     ssize_t line_size;
-//    size = ftell(merged_file); printf("before getline. %d\n",size);
     line_size = getline(&line_buf, &line_buf_size, merged_file);
-//    size = ftell(merged_file); printf("after getline.%d\n", size);
-
     while (line_size >= 0 && student_found == 0)
     {
         /* getting student name from merged file */
@@ -168,6 +127,50 @@ void report_input_file(const char* file_name, int num_stud)
 {
     fprintf(stderr, "process: %d file: %s number of students: %d\n",
             getpid(), file_name, num_stud);
+}
+
+void sort_grades_in_file(FILE *file, int *students_num, int *grades_sum) {
+    FILE *tmp_file = fopen("tmp_file.txt", "w");
+    fseek(file, 0, SEEK_SET);
+
+    // prepare sorted grades in a tmp file
+    char *token, *line_buf = NULL;
+    size_t line_buf_size = 0;
+    ssize_t line_size;
+    int arr[10], i;
+    line_size = getline(&line_buf, &line_buf_size, file);
+    while (line_size >= 0)
+    {
+        i = 0;
+        (*students_num)++;
+        token = strtok(line_buf, " ");
+        fprintf(tmp_file, "%s ", token);
+        token = strtok(NULL, " ");
+        while (token != NULL && strcmp(token, "\n") != 0) {
+            arr[i++] = atoi(token);
+            *grades_sum = *grades_sum + atoi(token);
+            token = strtok (NULL, " ");
+        }
+        qsort(arr, i, 4,cmpfunc);
+        for (int j = 0; j < i; ++j) {
+            fprintf(tmp_file, "%d ", arr[j]);
+        }
+        fprintf(tmp_file, "\n");
+        line_size = getline(&line_buf, &line_buf_size, file);
+    }
+    free(line_buf);
+    line_buf = NULL;
+    fclose(file);
+    fclose(tmp_file);
+
+    // transfer tmp file to merged file
+    char ch;
+    tmp_file = fopen("tmp_file.txt", "r");
+    FILE *merged_file = fopen(merged_file_name, "w");
+    while((ch = fgetc(tmp_file) ) != EOF )
+        fputc(ch, merged_file);
+    fclose(tmp_file);
+    fclose(merged_file);
 }
 
 void report_data_summary(int num_stud, double avg)
