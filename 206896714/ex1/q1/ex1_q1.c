@@ -12,7 +12,6 @@ void sort_grades_in_file(FILE *file, int *students_num, int *grades_sum, int *gr
 
 char merged_file_name[] = "merged.txt";
 char tmp_file_name[] = "tmp_file.txt";
-long position;
 
 int cmpfunc (const void * a, const void * b) {
     return ( *(int*)b - *(int*)a );
@@ -77,8 +76,7 @@ void update_student_in_merged_file(char *student_line, FILE *merged_file) {
         merged_file_token = strtok(line, " ");
         /* compare students name */
         if (strcmp(merged_file_token, input_file_token) == 0) { /* student already in the merged file */
-            position = ftell(merged_file);
-            insert_grades_in_position(student_line, position, merged_file);
+            insert_grades_in_position(student_line, ftell(merged_file), merged_file);
             fflush(merged_file);
             student_found = 1;
         }
