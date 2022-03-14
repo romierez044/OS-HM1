@@ -32,7 +32,7 @@ int main(int args, char **argv) {
     }
 
     sort_grades_in_file(merged_file, &students_num, &grades_sum, &grades_num);
-    int avg = (grades_num != 0 ) ? grades_sum / grades_num : 0;
+    float avg = (grades_num != 0 ) ?  (grades_sum / (float)grades_num) : 0.0;
     report_data_summary(students_num, avg);
     return EXIT_SUCCESS;
 }
