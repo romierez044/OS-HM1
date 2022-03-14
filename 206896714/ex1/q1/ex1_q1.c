@@ -1,7 +1,9 @@
+#define  _POSIX_C_SOURCE 200809L
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <strings.h>
+#include <string.h>
 
 int read_file_and_update_merged_file(char *file_name, FILE *merged_file);
 void report_input_file(const char* file_name, int num_stud);
